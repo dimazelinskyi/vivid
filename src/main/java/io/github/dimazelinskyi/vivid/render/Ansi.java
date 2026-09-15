@@ -61,6 +61,20 @@ public final class Ansi {
         return codes.toString();
     }
 
+    /**
+     * Wraps text in the sequence for a style and a reset.
+     *
+     * @param text  the text to style
+     * @param style the style to apply
+     * @param depth the richest color encoding to emit
+     * @return the styled text, or {@code text} itself if nothing needs to be emitted
+     */
+    public static String styled(String text, Style style, Color.Depth depth) {
+        Objects.requireNonNull(text, "text");
+        String sgr = sgr(style, depth);
+        return sgr.isEmpty() || text.isEmpty() ? text : sgr + text + RESET;
+    }
+
     private static void addColor(StringJoiner codes, Color color, Color.Depth depth, boolean background) {
         if (color == null) {
             return;

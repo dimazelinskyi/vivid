@@ -36,6 +36,23 @@ public interface Renderable {
     List<String> render(Context context);
 
     /**
+     * Returns the width this element would naturally occupy, used by containers such as panels
+     * and tables to size themselves. The result may exceed {@link Context#maxWidth()}.
+     *
+     * <p>The default renders the element and returns the width of its widest line.
+     *
+     * @param context width and color constraints for this render pass
+     * @return the natural width in cells
+     */
+    default int measure(Context context) {
+        int widest = 0;
+        for (String line : render(context)) {
+            widest = Math.max(widest, Lines.width(line));
+        }
+        return widest;
+    }
+
+    /**
      * Adapts an arbitrary object to a {@link Renderable}.
      *
      * <p>Renderables are returned unchanged. Strings are interpreted as

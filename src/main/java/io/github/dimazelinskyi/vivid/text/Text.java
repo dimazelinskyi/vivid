@@ -195,6 +195,17 @@ public record Text(String plain, Style style, List<Span> spans, Justify justify)
         }
     }
 
+    /**
+     * Returns the length of the longest line, ignoring justification.
+     *
+     * @param context unused; text has the same natural width everywhere
+     * @return the natural width in cells
+     */
+    @Override
+    public int measure(Renderable.Context context) {
+        return plain.lines().mapToInt(String::length).max().orElse(0);
+    }
+
     private String renderLine(int start, int end, Renderable.Context context) {
         StringBuilder line = new StringBuilder();
         int free = context.maxWidth() - (end - start);
