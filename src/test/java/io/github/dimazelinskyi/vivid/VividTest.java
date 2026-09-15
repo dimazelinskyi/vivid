@@ -130,6 +130,7 @@ class VividTest {
         @Test
         void escapesMarkup() {
             assertEquals("\\[not a tag]", Markup.escape("[not a tag]"));
+            assertEquals("C:\\\\dir\\\\", Markup.escape("C:\\dir\\"));
         }
     }
 

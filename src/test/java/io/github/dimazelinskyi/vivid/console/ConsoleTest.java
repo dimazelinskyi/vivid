@@ -40,6 +40,20 @@ class ConsoleTest {
         }
 
         @Test
+        void stringsAreMarkup() {
+            builder().colorDepth(Color.Depth.STANDARD).build().println("[green]OK[/] done");
+
+            assertEquals("[32mOK[0m done\n", output());
+        }
+
+        @Test
+        void otherObjectsAreLiteral() {
+            builder().colorDepth(Color.Depth.STANDARD).build().println(java.util.List.of("red"));
+
+            assertEquals("[red]\n", output());
+        }
+
+        @Test
         void printSeparatesObjectsWithSpaces() {
             builder().build().print("a", 1, Text.of("b"));
 
