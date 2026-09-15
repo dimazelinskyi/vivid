@@ -219,10 +219,9 @@ class VividTest {
     }
 
     @Test
-    void renderingIsNotImplementedYet() {
+    void tableRenderingIsNotImplementedYet() {
         Renderable.Context context = Renderable.Context.of(80);
 
-        assertThrows(UnsupportedOperationException.class, () -> Text.of("hi").render(context));
         assertThrows(UnsupportedOperationException.class, () -> Vivid.table("A").build().render(context));
     }
 

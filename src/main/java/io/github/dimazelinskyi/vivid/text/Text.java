@@ -1,5 +1,6 @@
 package io.github.dimazelinskyi.vivid.text;
 
+import io.github.dimazelinskyi.vivid.render.Ansi;
 import io.github.dimazelinskyi.vivid.render.Justify;
 import io.github.dimazelinskyi.vivid.render.Renderable;
 import io.github.dimazelinskyi.vivid.style.Style;
@@ -164,9 +165,65 @@ public record Text(String plain, Style style, List<Span> spans, Justify justify)
         return plain.length();
     }
 
+    /**
+     * Renders this text as one line per {@code \n}-separated line of {@link #plain()}.
+     *
+     * <p>Each line is self-contained: styles are switched on with ANSI escape sequences and reset
+     * before the line ends. Lines shorter than {@code context.maxWidth()} are aligned by
+     * {@link #justify()} using leading spaces only; longer lines are not wrapped yet.
+     *
+     * @param context the available width and color depth
+     * @return the rendered lines
+     */
     @Override
     public List<String> render(Renderable.Context context) {
-        throw new UnsupportedOperationException("Text rendering is not implemented yet");
+        Objects.requireNonNull(context, "context");
+        List<String> lines = new ArrayList<>();
+        int lineStart = 0;
+        while (true) {
+            int newline = plain.indexOf('\n', lineStart);
+            int lineEnd = newline < 0 ? plain.length() : newline;
+            lines.add(renderLine(lineStart, lineEnd, context));
+            if (newline < 0) {
+                return List.copyOf(lines);
+            }
+            lineStart = newline + 1;
+        }
+    }
+
+    private String renderLine(int start, int end, Renderable.Context context) {
+        StringBuilder line = new StringBuilder();
+        int free = context.maxWidth() - (end - start);
+        if (free > 0 && justify != Justify.LEFT) {
+            line.append(" ".repeat(justify == Justify.RIGHT ? free : free / 2));
+        }
+
+        String openSgr = "";
+        for (int i = start; i < end; i++) {
+            String sgr = Ansi.sgr(styleAt(i), context.colorDepth());
+            if (!sgr.equals(openSgr)) {
+                if (!openSgr.isEmpty()) {
+                    line.append(Ansi.RESET);
+                }
+                line.append(sgr);
+                openSgr = sgr;
+            }
+            line.append(plain.charAt(i));
+        }
+        if (!openSgr.isEmpty()) {
+            line.append(Ansi.RESET);
+        }
+        return line.toString();
+    }
+
+    private Style styleAt(int index) {
+        Style effective = style;
+        for (Span span : spans) {
+            if (span.start() <= index && index < span.end()) {
+                effective = effective.combine(span.style());
+            }
+        }
+        return effective;
     }
 
     /**
