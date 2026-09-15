@@ -78,6 +78,19 @@ class TextRenderTest {
         }
 
         @Test
+        void crlfIsALineSeparator() {
+            assertEquals(List.of("   a", "   b"), render(Text.of("a\r\nb").withJustify(Justify.RIGHT), 4, Color.Depth.NONE));
+            assertEquals(List.of("", ""), render(Text.of("\r\n")));
+        }
+
+        @Test
+        void crlfDoesNotLeakIntoStyledRuns() {
+            Text text = Text.styled("a\r\nb", Style.of(Color.RED));
+
+            assertEquals(List.of(RED + "a" + RESET, RED + "b" + RESET), render(text));
+        }
+
+        @Test
         void emptyTextIsOneEmptyLine() {
             assertEquals(List.of(""), render(Text.of("")));
         }

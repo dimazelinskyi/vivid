@@ -166,7 +166,8 @@ public record Text(String plain, Style style, List<Span> spans, Justify justify)
     }
 
     /**
-     * Renders this text as one line per {@code \n}-separated line of {@link #plain()}.
+     * Renders this text as one line per line of {@link #plain()}, split on {@code \n} or
+     * {@code \r\n} (the separators themselves are not rendered).
      *
      * <p>Each line is self-contained: styles are switched on with ANSI escape sequences and reset
      * before the line ends. Lines shorter than {@code context.maxWidth()} are aligned by
@@ -183,6 +184,9 @@ public record Text(String plain, Style style, List<Span> spans, Justify justify)
         while (true) {
             int newline = plain.indexOf('\n', lineStart);
             int lineEnd = newline < 0 ? plain.length() : newline;
+            if (newline > lineStart && plain.charAt(newline - 1) == '\r') {
+                lineEnd--;
+            }
             lines.add(renderLine(lineStart, lineEnd, context));
             if (newline < 0) {
                 return List.copyOf(lines);
