@@ -220,10 +220,23 @@ class VividTest {
     }
 
     @Test
-    void tableRenderingIsNotImplementedYet() {
-        Renderable.Context context = Renderable.Context.of(80);
+    void rendersTheReadmeTable() {
+        Table table = Vivid.table("Library", "Language")
+                .column(Column.of("Stars").right())
+                .title("Terminal libraries")
+                .row("Rich", "Python", "[yellow]★ 50k[/]")
+                .row("Vivid", "Java", "[dim]coming soon[/]")
+                .build();
 
-        assertThrows(UnsupportedOperationException.class, () -> Vivid.table("A").build().render(context));
+        assertEquals(List.of(
+                "         Terminal libraries",
+                "╭─────────┬──────────┬─────────────╮",
+                "│ Library │ Language │       Stars │",
+                "├─────────┼──────────┼─────────────┤",
+                "│ Rich    │ Python   │       ★ 50k │",
+                "│ Vivid   │ Java     │ coming soon │",
+                "╰─────────┴──────────┴─────────────╯"),
+                table.render(new Renderable.Context(80, Color.Depth.NONE)));
     }
 
     public static void main(String[] args) {
