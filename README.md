@@ -7,9 +7,9 @@ tables, panels, progress bars, spinners and live updates — behind a small, flu
 It is inspired by Python's [Rich](https://github.com/Textualize/rich) and designed for Java 17+
 with **zero runtime dependencies**.
 
-> **Status: pre-alpha.** This repository contains the API skeleton only. Types, builders and
-> value objects exist and are tested; rendering and terminal I/O are not implemented yet and
-> throw `UnsupportedOperationException`. The API will change before 1.0.
+> **Status: pre-alpha.** Styled text rendering, terminal detection and color downgrade work.
+> Markup, tables, panels, progress and live display exist as API only and throw
+> `UnsupportedOperationException`. The API will change before 1.0.
 
 ---
 
@@ -33,10 +33,10 @@ aims for the middle ground:
 
 | Area              | Feature                                                            | Status  |
 |-------------------|--------------------------------------------------------------------|---------|
-| **Styling**       | 16 / 256 / true-color, bold, italic, underline, …                  | API ✅   |
+| **Styling**       | 16 / 256 / true-color, bold, italic, underline, …                  | ✅       |
 |                   | Style parsing: `"bold white on red"`                               | Planned |
-|                   | Automatic color downgrade by terminal capability                   | Planned |
-| **Text**          | Immutable styled `Text` with spans                                 | API ✅   |
+|                   | Automatic color downgrade by terminal capability                   | ✅       |
+| **Text**          | Immutable styled `Text` with spans                                 | ✅       |
 |                   | Inline markup: `[bold red]Error[/]`                                | Planned |
 |                   | Word wrapping, justification, wide-character (CJK / emoji) support | Planned |
 | **Tables**        | Columns, rows, titles, alignment, width constraints                | API ✅   |
@@ -45,14 +45,16 @@ aims for the middle ground:
 | **Progress**      | Progress bars, multi-task live progress, `track(iterable)`         | API ✅   |
 |                   | Spinners and `status("Working…")`                                  | API ✅   |
 | **Live**          | In-place redrawing of any renderable                               | API ✅   |
-| **Console**       | Width / color / TTY detection, `NO_COLOR`, rules, status messages  | API ✅   |
+| **Console**       | Width / color / TTY detection, `NO_COLOR`, `FORCE_COLOR`, printing | ✅       |
+|                   | Rules, status messages                                             | API ✅   |
 | **Later**         | Trees, columns layout, syntax highlighting, Markdown, logging      | Ideas   |
 
-"API ✅" means the public types and signatures exist; the behavior is not yet implemented.
+"✅" means implemented. "API ✅" means the public types and signatures exist; the behavior is not yet implemented.
 
 ## A taste of the API
 
-This is the API Vivid is working towards. It compiles today; it just doesn't draw anything yet.
+This is the API Vivid is working towards. It all compiles today; styled `Text` already prints,
+the rest doesn't draw anything yet.
 
 ### Styled text and markup
 
