@@ -1,10 +1,15 @@
 package io.github.dimazelinskyi.vivid.panel;
 
+import io.github.dimazelinskyi.vivid.render.Ansi;
 import io.github.dimazelinskyi.vivid.render.BoxStyle;
 import io.github.dimazelinskyi.vivid.render.Justify;
+import io.github.dimazelinskyi.vivid.render.Lines;
 import io.github.dimazelinskyi.vivid.render.Renderable;
+import io.github.dimazelinskyi.vivid.style.Color;
 import io.github.dimazelinskyi.vivid.style.Style;
+import io.github.dimazelinskyi.vivid.text.Text;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -77,9 +82,70 @@ public record Panel(
         return new Builder(Renderable.from(content));
     }
 
+    /**
+     * Renders the border, title, subtitle, padding and content. The content is rendered at the
+     * inner width, and lines that are still too long are truncated with an ellipsis.
+     *
+     * @param context the available width and color depth
+     * @return the rendered lines
+     */
     @Override
     public List<String> render(Renderable.Context context) {
-        throw new UnsupportedOperationException("Panel rendering is not implemented yet");
+        Objects.requireNonNull(context, "context");
+        int frame = 2 + padding.left() + padding.right();
+        int width = context.maxWidth();
+        if (!expand) {
+            int natural = Math.max(content.measure(context) + frame, Math.max(labelWidth(title), labelWidth(subtitle)));
+            width = Math.min(width, natural);
+        }
+        int inner = Math.max(1, width - frame);
+        width = inner + frame;
+
+        List<String> lines = new ArrayList<>();
+        lines.add(edge(box.topLeft(), title, box.topRight(), width, context.colorDepth()));
+
+        String side = Ansi.styled(String.valueOf(box.vertical()), borderStyle, context.colorDepth());
+        String blank = side + " ".repeat(width - 2) + side;
+        String left = side + " ".repeat(padding.left());
+        String right = " ".repeat(padding.right()) + side;
+        for (int i = 0; i < padding.top(); i++) {
+            lines.add(blank);
+        }
+        for (String line : content.render(new Renderable.Context(inner, context.colorDepth()))) {
+            lines.add(left + Lines.fit(line, inner) + right);
+        }
+        for (int i = 0; i < padding.bottom(); i++) {
+            lines.add(blank);
+        }
+
+        lines.add(edge(box.bottomLeft(), subtitle, box.bottomRight(), width, context.colorDepth()));
+        return List.copyOf(lines);
+    }
+
+    /** The width a label needs in the border: corners, one line character and a space either side. */
+    private static int labelWidth(String label) {
+        return label == null || label.isEmpty() ? 0 : Text.markup(label).measure(Renderable.Context.of(1)) + 6;
+    }
+
+    /** Draws the top or bottom border, with the label set into it if there is room. */
+    private String edge(char leftCorner, String label, char rightCorner, int width, Color.Depth depth) {
+        int span = width - 2;
+        String horizontal = String.valueOf(box.horizontal());
+        int room = span - 4;
+        if (label == null || label.isEmpty() || room < 1) {
+            return Ansi.styled(leftCorner + horizontal.repeat(span) + rightCorner, borderStyle, depth);
+        }
+        List<String> rendered = Text.markup(label).render(new Renderable.Context(room, depth));
+        String text = Lines.truncate(rendered.get(0), room);
+        int fill = span - Lines.width(text) - 2;
+        int before = switch (titleJustify) {
+            case LEFT -> 1;
+            case CENTER -> fill / 2;
+            case RIGHT -> fill - 1;
+        };
+        return Ansi.styled(leftCorner + horizontal.repeat(before), borderStyle, depth)
+                + " " + text + " "
+                + Ansi.styled(horizontal.repeat(fill - before) + rightCorner, borderStyle, depth);
     }
 
     /**
