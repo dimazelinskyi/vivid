@@ -1,5 +1,6 @@
 package io.github.dimazelinskyi.vivid.console;
 
+import io.github.dimazelinskyi.vivid.render.Justify;
 import io.github.dimazelinskyi.vivid.style.Color;
 import io.github.dimazelinskyi.vivid.style.Style;
 import io.github.dimazelinskyi.vivid.text.Text;
@@ -50,6 +51,21 @@ class ConsoleTest {
             builder().build().println(Text.of("a\nb"), "c");
 
             assertEquals("a\nb c\n", output());
+        }
+
+        @Test
+        void laterObjectsOnlyGetTheRemainingWidth() {
+            builder().width(6).colorDepth(Color.Depth.STANDARD).build()
+                    .println(Text.styled("a", Style.of(Color.RED)), Text.of("b").withJustify(Justify.RIGHT));
+
+            assertEquals("[31ma[0m    b\n", output());
+        }
+
+        @Test
+        void aFullLineLeavesAtLeastOneCell() {
+            builder().width(3).build().println("abc", Text.of("d").withJustify(Justify.RIGHT));
+
+            assertEquals("abc d\n", output());
         }
 
         @Test

@@ -6,6 +6,7 @@ import io.github.dimazelinskyi.vivid.style.Style;
 
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.regex.Pattern;
 
 /**
  * ANSI escape sequences for styled terminal output.
@@ -19,7 +20,20 @@ public final class Ansi {
     /** Resets all colors and attributes to the terminal default. */
     public static final String RESET = "[0m";
 
+    private static final Pattern SGR = Pattern.compile("\\[[0-9;]*m");
+
     private Ansi() {
+    }
+
+    /**
+     * Removes SGR escape sequences, leaving only the displayable characters.
+     *
+     * @param line text that may contain escape sequences
+     * @return the text without them
+     */
+    public static String strip(String line) {
+        Objects.requireNonNull(line, "line");
+        return SGR.matcher(line).replaceAll("");
     }
 
     /**

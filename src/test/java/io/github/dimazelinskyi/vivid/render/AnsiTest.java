@@ -51,6 +51,11 @@ class AnsiTest {
     }
 
     @Test
+    void stripRemovesEscapeSequences() {
+        assertEquals("Status: OK", Ansi.strip("Status: " + ESC + "1;38;2;1;2;3mOK" + Ansi.RESET));
+    }
+
+    @Test
     void colorsAreDowngradedToTheDepth() {
         Style style = Style.of(Color.rgb(255, 136, 0));
 

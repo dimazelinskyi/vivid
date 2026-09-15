@@ -1,6 +1,7 @@
 package io.github.dimazelinskyi.vivid.console;
 
 import io.github.dimazelinskyi.vivid.progress.Status;
+import io.github.dimazelinskyi.vivid.render.Ansi;
 import io.github.dimazelinskyi.vivid.render.Renderable;
 import io.github.dimazelinskyi.vivid.style.Color;
 
@@ -100,19 +101,23 @@ public final class Console {
     }
 
     /**
-     * Renders each object at the console's width and color depth. Multi-line objects are joined
-     * by putting a space between the last line of one and the first line of the next.
+     * Renders each object at the console's color depth. Objects are joined by putting a space
+     * between the last line of one and the first line of the next, and each object after the
+     * first only gets the width left on that line (at least one cell).
      */
     private String render(Object[] objects) {
         Objects.requireNonNull(objects, "objects");
-        Renderable.Context context = new Renderable.Context(width, colorDepth);
         List<String> lines = new ArrayList<>();
         for (Object object : objects) {
-            List<String> rendered = Renderable.from(object).render(context);
-            if (lines.isEmpty() || rendered.isEmpty()) {
-                lines.addAll(rendered);
-            } else {
-                int last = lines.size() - 1;
+            Renderable renderable = Renderable.from(object);
+            if (lines.isEmpty()) {
+                lines.addAll(renderable.render(new Renderable.Context(width, colorDepth)));
+                continue;
+            }
+            int last = lines.size() - 1;
+            int used = Ansi.strip(lines.get(last)).length() + 1;
+            List<String> rendered = renderable.render(new Renderable.Context(Math.max(1, width - used), colorDepth));
+            if (!rendered.isEmpty()) {
                 lines.set(last, lines.get(last) + " " + rendered.get(0));
                 lines.addAll(rendered.subList(1, rendered.size()));
             }
