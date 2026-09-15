@@ -1,6 +1,7 @@
 package io.github.dimazelinskyi.vivid.style;
 
 import java.util.HexFormat;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -90,12 +91,53 @@ public sealed interface Color permits Color.Standard, Color.Indexed, Color.Rgb {
      * Parses a color by name or notation: {@code "red"}, {@code "bright_blue"},
      * {@code "#ff8800"}, {@code "rgb(255,136,0)"} or {@code "color(208)"}.
      *
+     * Names and notations are case-insensitive, and spaces are allowed inside the parentheses.
+     *
      * @param definition the color definition
      * @return the color
      * @throws IllegalArgumentException if the definition is not recognised
      */
     static Color parse(String definition) {
-        throw new UnsupportedOperationException("Color parsing is not implemented yet");
+        Objects.requireNonNull(definition, "definition");
+        String value = definition.strip().toLowerCase(Locale.ROOT);
+        if (value.startsWith("#")) {
+            return hex(value);
+        }
+        String rgbArguments = arguments(value, "rgb");
+        if (rgbArguments != null) {
+            String[] channels = rgbArguments.split(",", -1);
+            if (channels.length == 3) {
+                try {
+                    return rgb(Integer.parseInt(channels[0].strip()),
+                            Integer.parseInt(channels[1].strip()),
+                            Integer.parseInt(channels[2].strip()));
+                } catch (NumberFormatException e) {
+                    // reported below
+                }
+            }
+            throw new IllegalArgumentException("Expected rgb(red,green,blue) with numbers 0-255, got: " + definition);
+        }
+        String colorArguments = arguments(value, "color");
+        if (colorArguments != null) {
+            try {
+                return indexed(Integer.parseInt(colorArguments.strip()));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Expected color(index) with a number 0-255, got: " + definition, e);
+            }
+        }
+        for (Standard standard : Standard.values()) {
+            if (standard.name().toLowerCase(Locale.ROOT).equals(value)) {
+                return standard;
+            }
+        }
+        throw new IllegalArgumentException("Unknown color: " + definition);
+    }
+
+    /** Returns what is inside {@code function(...)}, or {@code null} if {@code value} is not that call. */
+    private static String arguments(String value, String function) {
+        return value.startsWith(function + "(") && value.endsWith(")")
+                ? value.substring(function.length() + 1, value.length() - 1)
+                : null;
     }
 
     /**

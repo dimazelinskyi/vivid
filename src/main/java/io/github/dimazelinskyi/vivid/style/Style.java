@@ -1,5 +1,6 @@
 package io.github.dimazelinskyi.vivid.style;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -58,12 +59,88 @@ public record Style(Color foreground, Color background, Set<Attribute> attribute
      * Parses a style definition such as {@code "bold red"}, {@code "italic #ff8800 on black"}
      * or {@code "underline on rgb(30,30,30)"}.
      *
+     * <p>Words are case-insensitive. Attributes are named like {@link Attribute} constants
+     * ({@code bold}, {@code strikethrough}, ...); any other word is a {@link Color#parse(String) color}.
+     *
      * @param definition space-separated attributes and colors; a background is introduced by {@code on}
      * @return the parsed style
      * @throws IllegalArgumentException if the definition is not valid
      */
     public static Style parse(String definition) {
-        throw new UnsupportedOperationException("Style parsing is not implemented yet");
+        Objects.requireNonNull(definition, "definition");
+        List<String> words = words(definition);
+        if (words.isEmpty()) {
+            throw new IllegalArgumentException("Style definition is empty");
+        }
+        Color foreground = null;
+        Color background = null;
+        EnumSet<Attribute> attributes = EnumSet.noneOf(Attribute.class);
+        for (int i = 0; i < words.size(); i++) {
+            String word = words.get(i);
+            if (word.equalsIgnoreCase("on")) {
+                if (i + 1 == words.size()) {
+                    throw new IllegalArgumentException("Expected a color after 'on' in style: " + definition);
+                }
+                if (background != null) {
+                    throw new IllegalArgumentException("More than one background color in style: " + definition);
+                }
+                background = color(words.get(++i), definition);
+                continue;
+            }
+            Attribute attribute = attribute(word);
+            if (attribute != null) {
+                attributes.add(attribute);
+                continue;
+            }
+            if (foreground != null) {
+                throw new IllegalArgumentException("More than one foreground color in style: " + definition);
+            }
+            foreground = color(word, definition);
+        }
+        return new Style(foreground, background, attributes);
+    }
+
+    /** Splits on whitespace, except inside parentheses so that {@code rgb(1, 2, 3)} stays one word. */
+    private static List<String> words(String definition) {
+        List<String> words = new ArrayList<>();
+        StringBuilder word = new StringBuilder();
+        int depth = 0;
+        for (char c : definition.toCharArray()) {
+            if (Character.isWhitespace(c) && depth == 0) {
+                if (word.length() > 0) {
+                    words.add(word.toString());
+                    word.setLength(0);
+                }
+                continue;
+            }
+            if (c == '(') {
+                depth++;
+            } else if (c == ')' && depth > 0) {
+                depth--;
+            }
+            word.append(c);
+        }
+        if (word.length() > 0) {
+            words.add(word.toString());
+        }
+        return words;
+    }
+
+    private static Attribute attribute(String word) {
+        for (Attribute attribute : Attribute.values()) {
+            if (attribute.name().equalsIgnoreCase(word)) {
+                return attribute;
+            }
+        }
+        return null;
+    }
+
+    private static Color color(String word, String definition) {
+        try {
+            return Color.parse(word);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unknown style word '" + word + "' in style: " + definition, e);
+        }
     }
 
     /**
