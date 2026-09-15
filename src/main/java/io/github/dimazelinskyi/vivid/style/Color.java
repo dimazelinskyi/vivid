@@ -98,6 +98,46 @@ public sealed interface Color permits Color.Standard, Color.Indexed, Color.Rgb {
         throw new UnsupportedOperationException("Color parsing is not implemented yet");
     }
 
+    /**
+     * Returns the closest color that can be displayed at the given depth.
+     *
+     * <p>True colors map to the nearest entry of the 256-color cube or grayscale ramp, and
+     * 256-palette or true colors map to the nearest of the 16 standard colors. Colors the depth
+     * can already display are returned unchanged.
+     *
+     * <pre>{@code
+     * Color.rgb(255, 136, 0).downgrade(Color.Depth.EIGHT_BIT);  // Color.indexed(208)
+     * Color.indexed(196).downgrade(Color.Depth.STANDARD);       // Color.Standard.BRIGHT_RED
+     * }</pre>
+     *
+     * @param depth the color depth to fit into
+     * @return the displayable color, or {@code null} if {@code depth} is {@link Depth#NONE NONE}
+     */
+    default Color downgrade(Depth depth) {
+        Objects.requireNonNull(depth, "depth");
+        switch (depth) {
+            case NONE:
+                return null;
+            case STANDARD:
+                if (this instanceof Standard) {
+                    return this;
+                }
+                if (this instanceof Indexed indexed && indexed.index() < 16) {
+                    return Standard.values()[indexed.index()];
+                }
+                int[] rgb = this instanceof Rgb true24
+                        ? new int[] {true24.red(), true24.green(), true24.blue()}
+                        : Palette.rgb(((Indexed) this).index());
+                return Standard.values()[Palette.nearestStandard(rgb[0], rgb[1], rgb[2])];
+            case EIGHT_BIT:
+                return this instanceof Rgb true24
+                        ? new Indexed(Palette.nearestIndexed(true24.red(), true24.green(), true24.blue()))
+                        : this;
+            default:
+                return this;
+        }
+    }
+
     /** The 16 standard ANSI colors. Their exact appearance depends on the terminal theme. */
     enum Standard implements Color {
         BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE,
@@ -159,7 +199,7 @@ public sealed interface Color permits Color.Standard, Color.Indexed, Color.Rgb {
 
     /** How many colors a terminal can display, from least to most capable. */
     enum Depth {
-        /** No color at all; styling is limited to attributes, or dropped entirely. */
+        /** No styling at all: output is plain text without any escape sequences. */
         NONE,
         /** The 16 {@link Standard} colors. */
         STANDARD,

@@ -1,10 +1,14 @@
 package io.github.dimazelinskyi.vivid.console;
 
 import io.github.dimazelinskyi.vivid.progress.Status;
+import io.github.dimazelinskyi.vivid.render.Ansi;
 import io.github.dimazelinskyi.vivid.render.Renderable;
 import io.github.dimazelinskyi.vivid.style.Color;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -42,13 +46,16 @@ public final class Console {
     private final PrintStream out;
     private final int width;
     private final Color.Depth colorDepth;
-    private final boolean forceTerminal;
+    private final boolean terminal;
+    private final Object lock = new Object();
 
     private Console(Builder builder) {
         this.out = builder.out;
-        this.width = builder.width;
-        this.colorDepth = builder.colorDepth;
-        this.forceTerminal = builder.forceTerminal;
+        this.terminal = builder.forceTerminal
+                || (builder.out == System.out && TerminalDetector.systemOutIsTerminal());
+        TerminalDetector detector = new TerminalDetector(builder.environment, terminal);
+        this.width = builder.width > 0 ? builder.width : detector.width();
+        this.colorDepth = builder.colorDepth != null ? builder.colorDepth : detector.colorDepth();
     }
 
     /**
@@ -77,7 +84,8 @@ public final class Console {
      * @return this console
      */
     public Console print(Object... objects) {
-        throw new UnsupportedOperationException("Printing is not implemented yet");
+        write(render(objects));
+        return this;
     }
 
     /**
@@ -88,7 +96,40 @@ public final class Console {
      * @return this console
      */
     public Console println(Object... objects) {
-        throw new UnsupportedOperationException("Printing is not implemented yet");
+        write(render(objects) + "\n");
+        return this;
+    }
+
+    /**
+     * Renders each object at the console's color depth. Objects are joined by putting a space
+     * between the last line of one and the first line of the next, and each object after the
+     * first only gets the width left on that line (at least one cell).
+     */
+    private String render(Object[] objects) {
+        Objects.requireNonNull(objects, "objects");
+        List<String> lines = new ArrayList<>();
+        for (Object object : objects) {
+            Renderable renderable = Renderable.from(object);
+            if (lines.isEmpty()) {
+                lines.addAll(renderable.render(new Renderable.Context(width, colorDepth)));
+                continue;
+            }
+            int last = lines.size() - 1;
+            int used = Ansi.strip(lines.get(last)).length() + 1;
+            List<String> rendered = renderable.render(new Renderable.Context(Math.max(1, width - used), colorDepth));
+            if (!rendered.isEmpty()) {
+                lines.set(last, lines.get(last) + " " + rendered.get(0));
+                lines.addAll(rendered.subList(1, rendered.size()));
+            }
+        }
+        return String.join("\n", lines);
+    }
+
+    private void write(String output) {
+        synchronized (lock) {
+            out.print(output);
+            out.flush();
+        }
     }
 
     /**
@@ -190,42 +231,36 @@ public final class Console {
 
     /**
      * Returns the width of the console in terminal cells: the configured width if set,
-     * otherwise the detected terminal width.
+     * otherwise the {@code COLUMNS} environment variable, falling back to 80.
      *
      * @return the width in cells
      */
     public int width() {
-        if (width > 0) {
-            return width;
-        }
-        throw new UnsupportedOperationException("Terminal width detection is not implemented yet");
+        return width;
     }
 
     /**
      * Returns the richest color encoding this console will emit: the configured depth if set,
-     * otherwise the depth detected from the environment ({@code COLORTERM}, {@code TERM},
-     * {@code NO_COLOR}, ...).
+     * otherwise the depth detected from the environment. {@code NO_COLOR} disables color,
+     * {@code FORCE_COLOR} enables it even when output is redirected, and otherwise output that is
+     * not a terminal gets no color; {@code COLORTERM}, {@code WT_SESSION} and {@code TERM} decide
+     * between 16, 256 and true color.
      *
      * @return the color depth
      */
     public Color.Depth colorDepth() {
-        if (colorDepth != null) {
-            return colorDepth;
-        }
-        throw new UnsupportedOperationException("Color depth detection is not implemented yet");
+        return colorDepth;
     }
 
     /**
      * Tells whether output goes to an interactive terminal. Animations and live displays are
-     * only drawn when this is {@code true}.
+     * only drawn when this is {@code true}. Only {@code System.out} is detected as a terminal,
+     * unless {@link Builder#forceTerminal(boolean)} is set.
      *
      * @return {@code true} if writing to a terminal
      */
     public boolean isTerminal() {
-        if (forceTerminal) {
-            return true;
-        }
-        throw new UnsupportedOperationException("Terminal detection is not implemented yet");
+        return terminal;
     }
 
     /**
@@ -237,8 +272,15 @@ public final class Console {
         private int width;
         private Color.Depth colorDepth;
         private boolean forceTerminal;
+        private Map<String, String> environment = System.getenv();
 
         private Builder() {
+        }
+
+        /** Replaces the environment variables used for detection; for tests. */
+        Builder environment(Map<String, String> environment) {
+            this.environment = Map.copyOf(environment);
+            return this;
         }
 
         /**
