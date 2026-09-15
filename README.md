@@ -7,8 +7,8 @@ tables, panels, progress bars, spinners and live updates — behind a small, flu
 It is inspired by Python's [Rich](https://github.com/Textualize/rich) and designed for Java 17+
 with **zero runtime dependencies**.
 
-> **Status: pre-alpha.** Styled text rendering, terminal detection and color downgrade work.
-> Markup, tables, panels, progress and live display exist as API only and throw
+> **Status: pre-alpha.** Styled text, markup, terminal detection and color downgrade work.
+> Tables, panels, progress and live display exist as API only and throw
 > `UnsupportedOperationException`. The API will change before 1.0.
 
 ---
@@ -34,10 +34,10 @@ aims for the middle ground:
 | Area              | Feature                                                            | Status  |
 |-------------------|--------------------------------------------------------------------|---------|
 | **Styling**       | 16 / 256 / true-color, bold, italic, underline, …                  | ✅       |
-|                   | Style parsing: `"bold white on red"`                               | Planned |
+|                   | Style parsing: `"bold white on red"`                               | ✅       |
 |                   | Automatic color downgrade by terminal capability                   | ✅       |
 | **Text**          | Immutable styled `Text` with spans                                 | ✅       |
-|                   | Inline markup: `[bold red]Error[/]`                                | Planned |
+|                   | Inline markup: `[bold red]Error[/]`                                | ✅       |
 |                   | Word wrapping, justification, wide-character (CJK / emoji) support | Planned |
 | **Tables**        | Columns, rows, titles, alignment, width constraints                | API ✅   |
 |                   | Auto column sizing, wrapping, box styles                           | Planned |
@@ -53,8 +53,8 @@ aims for the middle ground:
 
 ## A taste of the API
 
-This is the API Vivid is working towards. It all compiles today; styled `Text` already prints,
-the rest doesn't draw anything yet.
+This is the API Vivid is working towards. It all compiles today; styled text and markup already
+print, tables, panels, progress and live display don't draw anything yet.
 
 ### Styled text and markup
 
