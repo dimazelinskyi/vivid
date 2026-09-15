@@ -38,18 +38,23 @@ public interface Renderable {
     /**
      * Adapts an arbitrary object to a {@link Renderable}.
      *
-     * <p>Renderables are returned unchanged. Any other value is converted with
-     * {@link String#valueOf(Object)} and will be interpreted as {@link io.github.dimazelinskyi.vivid.text.Markup markup}.
+     * <p>Renderables are returned unchanged. Strings are interpreted as
+     * {@link io.github.dimazelinskyi.vivid.text.Markup markup}. Any other value is converted with
+     * {@link String#valueOf(Object)} and shown literally, so that e.g. a list printed as {@code [red]}
+     * is not mistaken for a tag.
      *
      * @param value the object to adapt
      * @return a renderable for {@code value}
+     * @throws IllegalArgumentException if {@code value} is a string with malformed markup
      */
     static Renderable from(Object value) {
         Objects.requireNonNull(value, "value");
         if (value instanceof Renderable renderable) {
             return renderable;
         }
-        // TODO: switch to Text.markup(...) once Markup.parse is implemented.
+        if (value instanceof String markup) {
+            return Text.markup(markup);
+        }
         return Text.of(String.valueOf(value));
     }
 
