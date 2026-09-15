@@ -22,8 +22,9 @@ import java.util.Objects;
  * </pre>
  *
  * <p>Brackets that do not contain a valid style, such as {@code [INFO]}, {@code [1, 2]} or
- * {@code [/usr/bin]}, are kept as literal text. A literal {@code [} can always be written as {@code \[};
- * use {@link #escape(String)} for untrusted input.
+ * {@code [/usr/bin]}, are kept as literal text. A literal {@code [} can always be written as {@code \[}
+ * and a literal backslash as {@code \\}; a backslash before any other character is kept as is, so
+ * {@code C:\temp} needs no escaping. Use {@link #escape(String)} for untrusted input.
  */
 public final class Markup {
 
@@ -47,8 +48,8 @@ public final class Markup {
         int i = 0;
         while (i < markup.length()) {
             char c = markup.charAt(i);
-            if (c == '\\' && i + 1 < markup.length() && markup.charAt(i + 1) == '[') {
-                plain.append('[');
+            if (c == '\\' && i + 1 < markup.length() && (markup.charAt(i + 1) == '[' || markup.charAt(i + 1) == '\\')) {
+                plain.append(markup.charAt(i + 1));
                 i += 2;
                 continue;
             }
@@ -118,14 +119,15 @@ public final class Markup {
      * Escapes a string so it is displayed literally when embedded in markup.
      *
      * <p>Always escape user input, file names, and other untrusted content before
-     * interpolating it into markup.
+     * interpolating it into markup. Backslashes are doubled as well, so text ending in a
+     * backslash cannot escape a tag that follows it.
      *
      * @param text the string to escape
      * @return the escaped string
      */
     public static String escape(String text) {
         Objects.requireNonNull(text, "text");
-        return text.replace("[", "\\[");
+        return text.replace("\\", "\\\\").replace("[", "\\[");
     }
 
     /**

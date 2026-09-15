@@ -94,10 +94,23 @@ class MarkupTest {
             assertParsed("C:\\temp", "C:\\temp");
         }
 
+        @Test
+        void doubleBackslashIsOneBackslash() {
+            assertParsed("a\\\\b", "a\\b");
+            assertParsed("\\\\[red]x", "\\x", new Text.Span(1, 2, RED));
+        }
+
         @ParameterizedTest
-        @ValueSource(strings = {"[bold]x[/]", "C:\\[x]", "a[red]", "\\[", "[/]"})
+        @ValueSource(strings = {"[bold]x[/]", "C:\\[x]", "a[red]", "\\[", "[/]", "dir\\", "\\\\[", "C:\\temp"})
         void escapeRoundTrips(String text) {
             assertParsed(Markup.escape(text), text);
+        }
+
+        @Test
+        void escapedTextEndingInBackslashDoesNotSwallowTheNextTag() {
+            String path = "C:\\dir\\";
+
+            assertParsed("[red]" + Markup.escape(path) + "[/] normal", "C:\\dir\\ normal", new Text.Span(0, 7, RED));
         }
     }
 
