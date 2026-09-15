@@ -94,7 +94,9 @@ public record Text(String plain, Style style, List<Span> spans, Justify justify)
     }
 
     /**
-     * Returns a new text with another text appended, preserving the other text's styling.
+     * Returns a new text with another text appended. Each part keeps exactly its own styling:
+     * this text's base style is narrowed to a span over the original characters, so it does not
+     * leak onto the appended part, and the result has a plain base style.
      *
      * @param other the text to append
      * @return the new text
@@ -102,14 +104,18 @@ public record Text(String plain, Style style, List<Span> spans, Justify justify)
     public Text append(Text other) {
         Objects.requireNonNull(other, "other");
         int offset = plain.length();
-        List<Span> merged = new ArrayList<>(spans);
+        List<Span> merged = new ArrayList<>();
+        if (!style.isPlain() && offset > 0) {
+            merged.add(new Span(0, offset, style));
+        }
+        merged.addAll(spans);
         if (!other.style.isPlain()) {
             merged.add(new Span(offset, offset + other.plain.length(), other.style));
         }
         for (Span span : other.spans) {
             merged.add(span.shift(offset));
         }
-        return new Text(plain + other.plain, style, merged, justify);
+        return new Text(plain + other.plain, Style.NONE, merged, justify);
     }
 
     /**

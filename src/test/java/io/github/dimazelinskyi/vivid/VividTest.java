@@ -116,6 +116,18 @@ class VividTest {
         }
 
         @Test
+        void appendDoesNotLeakBaseStyleOntoAppendedText() {
+            Style red = Style.builder().color(Color.RED).bold().build();
+            Style underline = Style.builder().underline().build();
+
+            Text text = Text.styled("A", red).append("B").append("C", underline);
+
+            assertEquals("ABC", text.plain());
+            assertTrue(text.style().isPlain());
+            assertEquals(List.of(new Text.Span(0, 1, red), new Text.Span(2, 3, underline)), text.spans());
+        }
+
+        @Test
         void escapesMarkup() {
             assertEquals("\\[not a tag]", Markup.escape("[not a tag]"));
         }
