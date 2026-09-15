@@ -7,8 +7,8 @@ tables, panels, progress bars, spinners and live updates — behind a small, flu
 It is inspired by Python's [Rich](https://github.com/Textualize/rich) and designed for Java 17+
 with **zero runtime dependencies**.
 
-> **Status: pre-alpha.** Styled text, markup, terminal detection and color downgrade work.
-> Tables, panels, progress and live display exist as API only and throw
+> **Status: pre-alpha.** Styled text, markup, panels, tables, terminal detection and color downgrade
+> work. Progress bars, spinners and live display exist as API only and throw
 > `UnsupportedOperationException`. The API will change before 1.0.
 
 ---
@@ -39,9 +39,10 @@ aims for the middle ground:
 | **Text**          | Immutable styled `Text` with spans                                 | ✅       |
 |                   | Inline markup: `[bold red]Error[/]`                                | ✅       |
 |                   | Word wrapping, justification, wide-character (CJK / emoji) support | Planned |
-| **Tables**        | Columns, rows, titles, alignment, width constraints                | API ✅   |
-|                   | Auto column sizing, wrapping, box styles                           | Planned |
-| **Panels**        | Boxes with titles, subtitles and padding                           | API ✅   |
+| **Tables**        | Columns, rows, titles, alignment, width constraints                | ✅       |
+|                   | Auto column sizing, box styles                                     | ✅       |
+|                   | Cell wrapping                                                      | Planned |
+| **Panels**        | Boxes with titles, subtitles and padding                           | ✅       |
 | **Progress**      | Progress bars, multi-task live progress, `track(iterable)`         | API ✅   |
 |                   | Spinners and `status("Working…")`                                  | API ✅   |
 | **Live**          | In-place redrawing of any renderable                               | API ✅   |
@@ -53,8 +54,8 @@ aims for the middle ground:
 
 ## A taste of the API
 
-This is the API Vivid is working towards. It all compiles today; styled text and markup already
-print, tables, panels, progress and live display don't draw anything yet.
+This is the API Vivid is working towards. It all compiles today; styled text, markup, tables and
+panels already print, progress bars, spinners and live display don't draw anything yet.
 
 ### Styled text and markup
 
@@ -97,11 +98,11 @@ Vivid.println(table);
 ```
 
 ```
-          Terminal libraries
+         Terminal libraries
 ╭─────────┬──────────┬─────────────╮
 │ Library │ Language │       Stars │
 ├─────────┼──────────┼─────────────┤
-│ Rich    │ Python   │     ★ 50k   │
+│ Rich    │ Python   │       ★ 50k │
 │ Vivid   │ Java     │ coming soon │
 ╰─────────┴──────────┴─────────────╯
 ```
